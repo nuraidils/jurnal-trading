@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+        <title>Jurnal Trading Kin</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div id="app">
+            <header class="top">
+                <div class="top-row">
+                    <div class="title-group">
+                        <h1>Jurnal Trading</h1>
+                        <span class="saving-indicator" id="savingIndicator"><span class="saving-dot"></span>Menyimpan…</span>
+                    </div>
+                    <span class="brand">KeanzyApps</span>
+                </div>
+                <div class="equity-row">
+                    <span class="val num" id="equityVal">—</span>
+                    <span class="delta flat" id="equityDelta">—</span>
+                    <select id="currencySelect" style="background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); border-radius: 6px; padding: 4px 6px; font-size: 12px">
+                        <option value="IDR">IDR</option>
+                        <option value="USD">USD</option>
+                        <option value="USC">USC</option>
+                    </select>
+                </div>
+                <div class="start-eq-line" id="startEqLabel"></div>
+                <div class="open-count" id="openCountLabel"></div>
+            </header>
+
+            <main>
+                <section class="view active" id="view-dashboard"></section>
+                <section class="view" id="view-entry"></section>
+                <section class="view" id="view-open"></section>
+                <section class="view" id="view-close"></section>
+                <section class="view" id="view-history"></section>
+                <section class="view" id="view-settings"></section>
+            </main>
+
+            <nav class="bottom">
+                <button data-view="dashboard" class="active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="9" width="4" height="12" rx="1"/><rect x="17" y="4" width="4" height="17" rx="1"/></svg>
+                    Dasbor
+                </button>
+                <button data-view="entry">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+                    Buka posisi
+                </button>
+                <button data-view="open">
+                    <span class="nav-icon-wrap">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+                        <span class="count" id="openBadge" style="display: none"></span>
+                    </span>
+                    Terbuka
+                </button>
+                <button data-view="history">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                    Riwayat
+                </button>
+                <button data-view="settings">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 4v2.2M12 17.8V20M4 12h2.2M17.8 12H20M6.3 6.3l1.6 1.6M16.1 16.1l1.6 1.6M6.3 17.7l1.6-1.6M16.1 7.9l1.6-1.6"/></svg>
+                    Pengaturan
+                </button>
+            </nav>
+        </div>
+        <div class="toast" id="toast"></div>
+        <div class="chart-tooltip" id="chartTooltip"></div>
+        <div class="modal-overlay" id="modalOverlay"></div>
+
+        <script src="app.js" defer></script>
+    </body>
+</html>
