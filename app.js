@@ -1,4 +1,58 @@
 const API_URL = "/api/state";
+let currentUser = null;
+
+// ---------- Auth: API calls ----------
+async function apiRegister(username, email, password) {
+    const res = await fetch("/api/auth/register", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+}
+async function apiLogin(email, password) {
+    const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+}
+async function apiLogout() {
+    try {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {}
+}
+async function apiMe() {
+    try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        return await res.json();
+    } catch {
+        return { authenticated: false };
+    }
+}
+
+// ---------- Auth: tampilan ----------
+function showApp() {
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+}
+function switchAuthView(view) {
+    document.querySelectorAll(".auth-tab").forEach((b) => b.classList.toggle("active", b.dataset.authview === view));
+    document.getElementById("authViewLogin").classList.toggle("active", view === "login");
+    document.getElementById("authViewRegister").classList.toggle("active", view === "register");
+    document.getElementById("loginError").textContent = "";
+    document.getElementById("registerError").textContent = "";
+}
+function showAuthScreen(view = "login") {
+    document.getElementById("app").style.display = "none";
+    document.getElementById("authScreen").style.display = "flex";
+    switchAuthView(view);
+}
 const PAIRS = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "GBPJPY", "AUDUSD", "USDCHF", "Lainnya"];
 const STRATEGIES = ["Manual", "EA Fibonacci H4", "EA Scalping", "EA SOBAT XAU"];
 function getKnownStrategies() {
@@ -153,9 +207,53 @@ document.addEventListener(
     { passive: true }
 );
 
+document.querySelectorAll(".auth-tab").forEach((btn) => {
+    btn.addEventListener("click", () => switchAuthView(btn.dataset.authview));
+});
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login_email").value.trim();
+    const password = document.getElementById("login_password").value;
+    const errEl = document.getElementById("loginError");
+    errEl.textContent = "";
+    const { ok, data } = await apiLogin(email, password);
+    if (!ok) {
+        errEl.textContent = data.error || "Gagal masuk.";
+        return;
+    }
+    currentUser = data.user;
+    await startApp();
+});
+
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("reg_username").value.trim();
+    const email = document.getElementById("reg_email").value.trim();
+    const password = document.getElementById("reg_password").value;
+    const confirmPassword = document.getElementById("reg_confirm").value;
+    const errEl = document.getElementById("registerError");
+    errEl.textContent = "";
+    if (password !== confirmPassword) {
+        errEl.textContent = "Konfirmasi password tidak cocok.";
+        return;
+    }
+    const { ok, data } = await apiRegister(username, email, password);
+    if (!ok) {
+        errEl.textContent = data.error || "Gagal daftar.";
+        return;
+    }
+    currentUser = data.user;
+    await startApp();
+});
+
 async function loadData() {
     try {
-        const res = await fetch(API_URL, { method: "GET" });
+        const res = await fetch(API_URL, { method: "GET", credentials: "include" });
+        if (res.status === 401) {
+            showAuthScreen("login");
+            return;
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         state = data;
@@ -163,7 +261,7 @@ async function loadData() {
         if (!Array.isArray(state.withdrawals)) state.withdrawals = [];
         if (!state.currency) state.currency = "IDR";
     } catch (e) {
-        toast("Gagal memuat data dari server. Pastikan Laragon & MySQL aktif.");
+        toast("Gagal memuat data dari server. Pastikan koneksi database aktif.");
     }
 }
 
@@ -180,15 +278,20 @@ async function saveData() {
     try {
         const res = await fetch(API_URL, {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(state),
         });
+        if (res.status === 401) {
+            showAuthScreen("login");
+            return false;
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "Gagal menyimpan");
         return true;
     } catch (e) {
-        toast("Gagal menyimpan ke server. Pastikan Laragon & MySQL aktif.");
+        toast("Gagal menyimpan ke server. Pastikan koneksi database aktif.");
         return false;
     } finally {
         hideSaving();
@@ -548,11 +651,12 @@ async function onSubmitWithdraw(e) {
 function renderDashboard() {
     const el = document.getElementById("view-dashboard");
     const s = computeStats();
+    const greeting = `<div class="dash-greeting">Halo, ${escapeAttr(currentUser?.username || "")} 👋</div>`;
     if (state.trades.length === 0) {
-        el.innerHTML = `<div class="card"><div class="empty"><div class="big">Belum ada data</div><div class="small">Mulai dengan buka posisi pertamamu di tab "Buka posisi".</div></div></div>`;
+        el.innerHTML = `${greeting}<div class="card"><div class="empty"><div class="big">Belum ada data</div><div class="small">Mulai dengan buka posisi pertamamu di tab "Buka posisi".</div></div></div>`;
         return;
     }
-    el.innerHTML = `<div class="stat-grid">
+    el.innerHTML = `${greeting}<div class="stat-grid">
         <div class="stat-card"><div class="label">Win rate</div><div class="value num">${s.winRate.toFixed(1)}%</div></div>
         <div class="stat-card"><div class="label">Posisi selesai</div><div class="value num">${s.total}</div></div>
         <div class="stat-card"><div class="label">Total P/L</div><div class="value num" style="color:${s.totalPL >= 0 ? "var(--profit)" : "var(--loss)"}">${s.totalPL >= 0 ? "+" : ""}${fmtMoney(s.totalPL)}</div></div>
@@ -974,12 +1078,25 @@ function renderHistory() {
 function renderSettings() {
     const el = document.getElementById("view-settings");
     el.innerHTML = `<div class="card">
+        <h2>Akun</h2>
+        <div class="settings-username">Masuk sebagai <strong>${escapeAttr(currentUser?.username || "")}</strong></div>
+        <button class="ghost-btn" id="logoutBtn" style="color: var(--loss); border-color: var(--loss)">Keluar</button>
+    </div>
+    <div class="card">
         <h2>Data & Backup</h2>
         <button class="ghost-btn" id="exportBtn">Export backup</button>
         <button class="ghost-btn" id="importBtn">Import backup</button>
         <input type="file" id="importFile" accept="application/json" style="display: none" />
         <button class="ghost-btn" id="resetDataBtn" style="color: var(--loss); border-color: var(--loss)">Hapus semua data</button>
     </div>`;
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+        if (!(await confirmModal("Yakin ingin keluar dari akun ini?", { title: "Keluar", confirmText: "Ya, keluar" }))) return;
+        await apiLogout();
+        currentUser = null;
+        state = { trades: [], withdrawals: [], currency: "IDR" };
+        showAuthScreen("login");
+    });
 
     document.getElementById("exportBtn").addEventListener("click", () => {
         if (state.trades.length === 0) {
@@ -1083,7 +1200,8 @@ document.getElementById("currencySelect").addEventListener("change", async (e) =
     switchView(currentView);
 });
 
-async function init() {
+async function startApp() {
+    showApp();
     document.getElementById("view-dashboard").innerHTML = `<div class="stat-grid">
         <div class="stat-card skeleton"><div class="skel-line skel-w60"></div><div class="skel-line skel-w40 skel-lg"></div></div>
         <div class="stat-card skeleton"><div class="skel-line skel-w60"></div><div class="skel-line skel-w40 skel-lg"></div></div>
@@ -1094,5 +1212,15 @@ async function init() {
     await loadData();
     renderHeader();
     renderDashboard();
+}
+
+async function init() {
+    const me = await apiMe();
+    if (me.authenticated) {
+        currentUser = me.user;
+        await startApp();
+    } else {
+        showAuthScreen("login");
+    }
 }
 init();

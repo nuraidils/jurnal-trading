@@ -9,7 +9,40 @@
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
-        <div id="app">
+        <div id="authScreen" class="auth-screen" style="display: none">
+            <div class="auth-wrap">
+                <div class="auth-brand">
+                    <h1>Jurnal Trading</h1>
+                    <span class="brand">KeanzyApps</span>
+                </div>
+                <div class="card auth-card">
+                    <div class="auth-tabs">
+                        <button type="button" class="chip auth-tab active" data-authview="login">Masuk</button>
+                        <button type="button" class="chip auth-tab" data-authview="register">Daftar</button>
+                    </div>
+                    <div id="authViewLogin" class="auth-view active">
+                        <form id="loginForm">
+                            <div class="field"><label>Email</label><input type="email" id="login_email" required autocomplete="email" /></div>
+                            <div class="field"><label>Password</label><input type="password" id="login_password" required autocomplete="current-password" /></div>
+                            <div class="auth-error" id="loginError"></div>
+                            <button type="submit" class="submit-btn">Masuk</button>
+                        </form>
+                    </div>
+                    <div id="authViewRegister" class="auth-view">
+                        <form id="registerForm">
+                            <div class="field"><label>Username</label><input type="text" id="reg_username" required minlength="3" maxlength="30" autocomplete="username" /></div>
+                            <div class="field"><label>Email</label><input type="email" id="reg_email" required autocomplete="email" /></div>
+                            <div class="field"><label>Password</label><input type="password" id="reg_password" required minlength="8" autocomplete="new-password" /><span class="field-hint">Minimal 8 karakter</span></div>
+                            <div class="field"><label>Konfirmasi password</label><input type="password" id="reg_confirm" required minlength="8" autocomplete="new-password" /></div>
+                            <div class="auth-error" id="registerError"></div>
+                            <button type="submit" class="submit-btn">Daftar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="app" style="display: none">
             <header class="top">
                 <div class="top-row">
                     <div class="title-group">

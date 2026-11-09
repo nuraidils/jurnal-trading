@@ -46,6 +46,63 @@ textarea {
     padding-bottom: 78px;
 }
 
+/* ---------- Auth (login/register) ---------- */
+.auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 18px;
+}
+.auth-wrap {
+    width: 100%;
+    max-width: 380px;
+}
+.auth-brand {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+.auth-brand h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+.auth-card {
+    padding-top: 14px;
+}
+.auth-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+.auth-tab {
+    flex: 1;
+    text-align: center;
+}
+.auth-view {
+    display: none;
+}
+.auth-view.active {
+    display: block;
+}
+.auth-error {
+    color: var(--loss);
+    font-size: 13px;
+    margin: -4px 0 10px;
+    min-height: 16px;
+}
+.dash-greeting {
+    font-size: 14.5px;
+    color: var(--text-dim);
+}
+.settings-username {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+}
+
 header.top {
     padding: 22px 18px 16px;
     border-bottom: 1px solid var(--border);
