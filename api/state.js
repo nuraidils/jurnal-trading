@@ -36,6 +36,10 @@ export default async function handler(req, res) {
             if (!Array.isArray(body.trades)) body.trades = [];
             if (!Array.isArray(body.withdrawals)) body.withdrawals = [];
             if (!body.currency) body.currency = "IDR";
+            // Trading Plan: harus object biasa (atau kosong) dan ukurannya wajar.
+            if (body.plan !== undefined && body.plan !== null) {
+                if (typeof body.plan !== "object" || Array.isArray(body.plan) || JSON.stringify(body.plan).length > 5000) body.plan = null;
+            }
 
             const json = JSON.stringify(body);
             await db.query("INSERT INTO journal_state (user_id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = ?, updated_at = CURRENT_TIMESTAMP", [user.id, json, json]);

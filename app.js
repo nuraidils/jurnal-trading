@@ -59,7 +59,7 @@ function getKnownStrategies() {
     const used = state.trades.map((t) => t.strategy).filter(Boolean);
     return [...new Set([...STRATEGIES, ...used])];
 }
-let state = { trades: [], withdrawals: [], currency: "IDR" };
+let state = { trades: [], withdrawals: [], currency: "IDR", plan: null };
 let currentView = "dashboard";
 let historyFilter = { pair: "Semua", dir: "Semua", strategy: "Semua" };
 let closingTradeId = null;
@@ -260,6 +260,7 @@ async function loadData() {
         if (!Array.isArray(state.trades)) state.trades = [];
         if (!Array.isArray(state.withdrawals)) state.withdrawals = [];
         if (!state.currency) state.currency = "IDR";
+        state.plan = PlanCalc.normalizePlan(state.plan);
     } catch (e) {
         toast("Gagal memuat data dari server. Pastikan koneksi database aktif.");
     }
@@ -340,6 +341,12 @@ function currentEquity() {
     const snap = lastEquitySnapshot();
     if (snap.value === null) return null;
     return snap.value - withdrawalsSince(snap.time);
+}
+// Hasil hitung Trading Plan dari data jurnal saat ini (null kalau belum ada plan).
+// Semua nilai dalam mata uang plan; lihat plan-calc.js untuk detailnya.
+function computePlan(nowMs) {
+    if (!state.plan) return null;
+    return PlanCalc.compute(state.plan, { trades: state.trades, withdrawals: state.withdrawals, currency: state.currency, equity: currentEquity() }, nowMs);
 }
 function getCycles() {
     const cycles = [];
@@ -1094,12 +1101,12 @@ function renderSettings() {
         if (!(await confirmModal("Yakin ingin keluar dari akun ini?", { title: "Keluar", confirmText: "Ya, keluar" }))) return;
         await apiLogout();
         currentUser = null;
-        state = { trades: [], withdrawals: [], currency: "IDR" };
+        state = { trades: [], withdrawals: [], currency: "IDR", plan: null };
         showAuthScreen("login");
     });
 
     document.getElementById("exportBtn").addEventListener("click", () => {
-        if (state.trades.length === 0) {
+        if (state.trades.length === 0 && !state.plan) {
             toast("Belum ada data untuk di-export.");
             return;
         }
@@ -1130,6 +1137,7 @@ function renderSettings() {
                 if (!parsed || !Array.isArray(parsed.trades)) throw new Error("format tidak sesuai");
                 if (!Array.isArray(parsed.withdrawals)) parsed.withdrawals = [];
                 if (!parsed.currency) parsed.currency = state.currency || "IDR";
+                parsed.plan = PlanCalc.normalizePlan(parsed.plan);
                 const mode = await chooseModal("Pulihkan dari file backup", "Pilih cara memulihkan data dari file backup ini:", [
                     { id: "overwrite", label: "Timpa semua data yang ada", variant: "primary" },
                     { id: "merge", label: "Gabungkan dengan data yang ada", variant: "" },
@@ -1148,6 +1156,7 @@ function renderSettings() {
                     const existingWdIds = new Set((state.withdrawals || []).map((w) => w.id));
                     const mergedWd = parsed.withdrawals.filter((w) => !existingWdIds.has(w.id));
                     state.withdrawals = (state.withdrawals || []).concat(mergedWd);
+                    if (!state.plan && parsed.plan) state.plan = parsed.plan;
                 }
                 const ok = await saveData();
                 if (ok) {
@@ -1164,8 +1173,8 @@ function renderSettings() {
     });
 
     document.getElementById("resetDataBtn").addEventListener("click", async () => {
-        if (!(await confirmModal("Hapus SEMUA data jurnal (posisi terbuka & riwayat)? Tindakan ini tidak bisa dibatalkan.", { title: "Hapus semua data", danger: true, confirmText: "Ya, hapus semua" }))) return;
-        state = { trades: [], withdrawals: [], currency: state.currency };
+        if (!(await confirmModal("Hapus SEMUA data jurnal (posisi terbuka, riwayat & trading plan)? Tindakan ini tidak bisa dibatalkan.", { title: "Hapus semua data", danger: true, confirmText: "Ya, hapus semua" }))) return;
+        state = { trades: [], withdrawals: [], currency: state.currency, plan: null };
         const ok = await saveData();
         if (ok) {
             toast("Semua data dihapus.");
